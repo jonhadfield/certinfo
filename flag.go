@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+
+	"golang.design/x/clipboard"
 )
 
 type Flags struct {
@@ -25,6 +27,7 @@ type Flags struct {
 	Verbose     bool
 	Version     bool
 	More        bool
+	Clipboard   bool
 	Args        []string
 }
 
@@ -58,6 +61,10 @@ func ParseFlags() (Flags, error) {
 		"whether to print pem as well")
 	flagSet.BoolVar(&flags.PemOnly, "pem-only", getBoolEnv("CERTINFO_PEM_ONLY", false),
 		"whether to print only pem (useful for downloading certs from host)")
+	if isClipboardSupported() {
+		flagSet.BoolVar(&flags.Clipboard, "clipboard", false,
+			"read input from clipboard")
+	}
 	flagSet.BoolVar(&flags.Verbose, "verbose", getBoolEnv("CERTINFO_VERBOSE", false),
 		"verbose logging")
 	flagSet.BoolVar(&flags.Version, "version", getBoolEnv("CERTINFO_VERSION", false),
@@ -104,4 +111,13 @@ func getBoolEnv(envName string, defaultValue bool) bool {
 		return intValue
 	}
 	return defaultValue
+}
+
+func isClipboardSupported() (ok bool) {
+	defer func() {
+		if err := recover(); err != nil {
+			ok = false
+		}
+	}()
+	return clipboard.Init() == nil
 }

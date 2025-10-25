@@ -24,6 +24,7 @@ certinfo [flags] [<file>|<host:port> ...]
 | optional flags                                                                                                    |
 +---------------+---------------------------------------------------------------------------------------------------+
 | -chains       | whether to print verified chains as well                                                          |
+| -clipboard    | read input from clipboard (only if the clipboard is supported)                                    |
 | -expiry       | print expiry of certificates                                                                      |
 | -extensions   | whether to print extensions                                                                       |
 | -insecure     | whether a client verifies the server's certificate chain and host name (only applicable for host) |
