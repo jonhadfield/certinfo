@@ -31,18 +31,20 @@ release:
   github:
     owner: jonhadfield
     name: certreader
-homebrew_casks:
-  - repository:
+  prerelease: auto
+  name_template: "{{ .Tag }}"
+  extra_files:
+    - glob: ./dist/certreader_darwin*.zip
+
+brews:
+  - name: certreader
+    homepage: https://github.com/jonhadfield/certreader
+    description: >
+      Output detailed information about TLS certificates from local files, network hosts or clipboard.
+    repository:
       owner: jonhadfield
-      name: homebrew-tap
-      token: "{{ .Env.GITHUB_TOKEN }}"
-    name: certreader
-    homepage: "https://github.com/jonhadfield/certreader"
-    description: "Print x509 certificate info."
-    hooks:
-       post:
-         install: |
-           if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
-             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/certreader"]
-           end
+      name: homebrew-certreader
+
+announce:
+  skip: true
 
