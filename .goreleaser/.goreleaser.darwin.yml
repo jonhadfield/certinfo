@@ -1,0 +1,70 @@
+version: 2
+
+builds:
+  - id: darwin-arm64
+    env:
+      - CGO_ENABLED=1
+      - CC=clang
+      - CXX=clang++
+    goos:
+      - darwin
+    goarch:
+      - arm64
+    ldflags:
+      - -X main.Version={{.Version}}
+
+  - id: darwin-amd64
+    env:
+      - CGO_ENABLED=1
+      - CC=clang
+      - CXX=clang++
+    goos:
+      - darwin
+    goarch:
+      - amd64
+    ldflags:
+      - -X main.Version={{.Version}}
+
+archives:
+  # Create a single archive *group* (ID: darwin) that includes both mac builds
+  - id: darwin
+    ids:
+      - darwin-arm64
+      - darwin-amd64
+    formats:
+      - tar.gz
+
+checksum:
+  name_template: "checksums_darwin.txt"
+
+homebrew_casks:
+  - name: certreader
+    # IMPORTANT: these are *archive* IDs, not build IDs:
+    ids:
+      - darwin
+    binaries:
+      - certreader
+    homepage: https://github.com/jonhadfield/certreader
+    description: Output detailed information about TLS certificates...
+    commit_msg_template: "Brew cask update for {{ .ProjectName }} {{ .Tag }}"
+    directory: Casks
+    repository:
+      owner: jonhadfield
+      name: homebrew-certreader
+
+release:
+  github:
+    owner: jonhadfield
+    name: certreader
+  prerelease: auto
+  name_template: "{{ .Tag }}"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
