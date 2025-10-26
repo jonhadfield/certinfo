@@ -19,11 +19,11 @@ func Expiry(certificateLocations []cert.CertificateLocation) {
 		fmt.Printf("--- [%s] ---\n", certificateLocation.Name())
 		for _, certificate := range certificateLocation.Certificates {
 
-			fmt.Printf("Subject: %s\n", certificate.SubjectString())
+			fmt.Printf("%s: %s\n", AttributeName("Subject"), certificate.SubjectString())
 			if len(certificate.DNSNames()) != 0 {
-				fmt.Printf("DNS Names: %s\n", strings.Join(certificate.DNSNames(), ", "))
+				fmt.Printf("%s: %s\n", AttributeName("DNS Names"), strings.Join(certificate.DNSNames(), ", "))
 			}
-			fmt.Printf("Expiry: %s\n", expiryString(certificate))
+			fmt.Printf("%s: %s\n", AttributeName("Expiry"), expiryString(certificate))
 			fmt.Println()
 		}
 	}
@@ -36,9 +36,13 @@ func expiryString(certificate cert.Certificate) string {
 	}
 	expiry := formatExpiry(certificate.NotAfter())
 	if certificate.IsExpired() {
-		return fmt.Sprintf("EXPIRED %s ago", expiry)
+		return ExpiryStatus(true, fmt.Sprintf("EXPIRED %s ago", expiry))
 	}
-	return expiry
+
+	// Color code based on time remaining
+	now := time.Now()
+	daysUntilExpiry := int(certificate.NotAfter().Sub(now).Hours() / 24)
+	return ExpiryMessage(daysUntilExpiry, expiry)
 }
 
 func formatExpiry(t time.Time) string {

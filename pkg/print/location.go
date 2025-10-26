@@ -61,33 +61,33 @@ func printCertificate(certificate cert.Certificate, printExtensions, printSignat
 		return
 	}
 
-	fmt.Printf("Version: %d\n", certificate.Version())
-	fmt.Printf("Serial Number: %s\n", certificate.SerialNumber())
-	fmt.Printf("Signature Algorithm: %s\n", certificate.SignatureAlgorithm())
-	fmt.Printf("Type: %s\n", certificate.Type())
-	fmt.Printf("Issuer: %s\n", certificate.Issuer())
-	fmt.Println("Validity")
-	fmt.Printf("    Not Before: %s\n", validityFormat(certificate.NotBefore()))
-	fmt.Printf("    Not After : %s\n", validityFormat(certificate.NotAfter()))
-	fmt.Printf("Subject: %s\n", certificate.SubjectString())
-	fmt.Printf("DNS Names: %s\n", strings.Join(certificate.DNSNames(), ", "))
-	fmt.Printf("IP Addresses: %s\n", strings.Join(certificate.IPAddresses(), ", "))
-	fmt.Printf("Authority Key Id: %s\n", certificate.AuthorityKeyId())
-	fmt.Println("Subject Key")
-	fmt.Printf("    Id       : %s\n", certificate.SubjectKeyId())
-	fmt.Printf("    Algorithm: %s\n", certificate.PublicKeyAlgorithm())
-	fmt.Printf("Key Usage: %s\n", strings.Join(certificate.KeyUsage(), ", "))
-	fmt.Printf("Ext Key Usage: %s\n", strings.Join(certificate.ExtKeyUsage(), ", "))
-	fmt.Printf("CA: %t\n", certificate.IsCA())
+	fmt.Printf("%s: %d\n", AttributeName("Version"), certificate.Version())
+	fmt.Printf("%s: %s\n", AttributeName("Serial Number"), certificate.SerialNumber())
+	fmt.Printf("%s: %s\n", AttributeName("Signature Algorithm"), certificate.SignatureAlgorithm())
+	fmt.Printf("%s: %s\n", AttributeName("Type"), certificate.Type())
+	fmt.Printf("%s: %s\n", AttributeName("Issuer"), certificate.Issuer())
+	fmt.Printf("%s\n", AttributeName("Validity"))
+	fmt.Printf("    %s: %s\n", SubAttributeName("Not Before"), validityFormat(certificate.NotBefore()))
+	fmt.Printf("    %s: %s\n", SubAttributeName("Not After"), NotAfterDate(certificate.NotAfter()))
+	fmt.Printf("%s: %s\n", AttributeName("Subject"), certificate.SubjectString())
+	fmt.Printf("%s: %s\n", AttributeName("DNS Names"), strings.Join(certificate.DNSNames(), ", "))
+	fmt.Printf("%s: %s\n", AttributeName("IP Addresses"), strings.Join(certificate.IPAddresses(), ", "))
+	fmt.Printf("%s: %s\n", AttributeName("Authority Key Id"), certificate.AuthorityKeyId())
+	fmt.Printf("%s\n", AttributeName("Subject Key"))
+	fmt.Printf("    %s: %s\n", SubAttributeName("Id"), certificate.SubjectKeyId())
+	fmt.Printf("    %s: %s\n", SubAttributeName("Algorithm"), certificate.PublicKeyAlgorithm())
+	fmt.Printf("%s: %s\n", AttributeName("Key Usage"), strings.Join(certificate.KeyUsage(), ", "))
+	fmt.Printf("%s: %s\n", AttributeName("Ext Key Usage"), strings.Join(certificate.ExtKeyUsage(), ", "))
+	fmt.Printf("%s: %t\n", AttributeName("CA"), certificate.IsCA())
 
 	if printExtensions {
-		fmt.Println("Extensions:")
+		fmt.Printf("%s:\n", AttributeName("Extensions"))
 		for _, extension := range certificate.Extensions() {
 			name := fmt.Sprintf("%s (%s)", extension.Name, extension.Oid)
 			if extension.Critical {
 				name = fmt.Sprintf("%s [critical]", name)
 			}
-			fmt.Printf("    %s\n", name)
+			fmt.Printf("    %s\n", SubAttributeName(name))
 			for _, line := range extension.Values {
 				fmt.Printf("        %s\n", line)
 			}
@@ -95,8 +95,8 @@ func printCertificate(certificate cert.Certificate, printExtensions, printSignat
 	}
 
 	if printSignature {
-		fmt.Printf("Signature Algorithm: %s\n", certificate.SignatureAlgorithm())
-		fmt.Println("Signature Value")
+		fmt.Printf("%s: %s\n", AttributeName("Signature Algorithm"), certificate.SignatureAlgorithm())
+		fmt.Printf("%s\n", AttributeName("Signature Value"))
 		for _, line := range splitString(certificate.Signature(), "    ", 54) {
 			fmt.Println(line)
 		}
