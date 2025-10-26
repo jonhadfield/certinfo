@@ -1,0 +1,58 @@
+name: go
+
+on:
+  workflow_call:
+    inputs:
+      go-version:
+        description: "go version"
+        default: "1.24.0"
+        required: false
+        type: string
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      -
+        name: setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version:  ${{ inputs.go-version }}
+      -
+        name: go version
+        run: go version
+      -
+        name: install X11 dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev
+      -
+        name: go test
+        run: go test -v ./...
+      -
+        name: go vet
+        run: go vet ./...
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      -
+        name: trivy scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: "CRITICAL,HIGH"
