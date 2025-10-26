@@ -166,27 +166,27 @@ func LoadCertificatesFromNetwork(addr string, serverName string, tlsSkipVerify b
 	}
 }
 
-func LoadCertificatesFromFile(fileName string) CertificateLocation {
+func LoadCertificatesFromFile(fileName string, password string) CertificateLocation {
 
 	b, err := os.ReadFile(fileName)
 	if err != nil {
 		slog.Error(fmt.Sprintf("load certificate from file %s: %v", fileName, err.Error()))
 		return CertificateLocation{Path: fileName, Error: err}
 	}
-	return loadCertificate(fileName, b)
+	return loadCertificate(fileName, b, password)
 }
 
-func LoadCertificateFromStdin() CertificateLocation {
+func LoadCertificateFromStdin(password string) CertificateLocation {
 
 	content, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		slog.Error(fmt.Sprintf("load certificate from stdin: %v", err.Error()))
 		return CertificateLocation{Path: "stdin", Error: err}
 	}
-	return loadCertificate("stdin", content)
+	return loadCertificate("stdin", content, password)
 }
 
-func LoadCertificateFromClipboard() CertificateLocation {
+func LoadCertificateFromClipboard(password string) CertificateLocation {
 
 	if err := clipboard.Init(); err != nil {
 		slog.Error(fmt.Sprintf("load certificate from clipboard: %v", err.Error()))
@@ -197,13 +197,26 @@ func LoadCertificateFromClipboard() CertificateLocation {
 	if content == nil {
 		return CertificateLocation{Path: "clipboard", Error: errors.New("clipboard is empty")}
 	}
-	return loadCertificate("clipboard", content)
+	return loadCertificate("clipboard", content, password)
 }
 
-func loadCertificate(fileName string, data []byte) CertificateLocation {
+func loadCertificate(fileName string, data []byte, password string) CertificateLocation {
 
-	certificates, err := FromBytes(bytes.TrimSpace(data))
+	trimmed := bytes.TrimSpace(data)
+	certificates, err := FromBytes(trimmed, password)
 	if err != nil {
+		var passwordErr *PasswordRequiredError
+		if errors.As(err, &passwordErr) {
+			source := PasswordSourceFile
+			switch fileName {
+			case "stdin":
+				source = PasswordSourceStdin
+			case "clipboard":
+				source = PasswordSourceClipboard
+			}
+			passwordErr.SetSource(source)
+			return CertificateLocation{Path: fileName, Error: passwordErr}
+		}
 		slog.Error(fmt.Sprintf("parse certificate %s bytes: %v", fileName, err.Error()))
 		return CertificateLocation{Path: fileName, Error: err}
 	}

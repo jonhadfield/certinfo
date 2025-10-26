@@ -33,6 +33,7 @@ certinfo [flags] [<file>|<host:port> ...]
 | -no-expired   | do not print expired certificates                                                                 |
 | -pem          | whether to print pem as well                                                                      |
 | -pem-only     | whether to print only pem (useful for downloading certs from host)                                |
+| -pfx-password | password used when parsing PKCS#12/PFX bundles; leave empty for passwordless files                |
 | -server-name  | verify the hostname on the returned certificates, useful for testing SNI                          |
 | -signature    | whether to print signature                                                                        |
 | -sort-expiry  | sort certificates by expiration date                                                              |
@@ -41,6 +42,9 @@ certinfo [flags] [<file>|<host:port> ...]
 | -version      | certinfo version                                                                                  |
 | -help         | help                                                                                              |
 +---------------+---------------------------------------------------------------------------------------------------+
+
+When a PKCS#12/PFX input requires a password and no `--pfx-password` value is supplied, `certinfo` prompts on the
+terminal; set the flag or `CERTINFO_PFX_PASSWORD` for non-interactive usage.
 ```
 
 If you need to run against multiple hosts, it is faster to execute command with multiple arguments e.g.

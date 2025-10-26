@@ -28,6 +28,7 @@ type Flags struct {
 	Version     bool
 	More        bool
 	Clipboard   bool
+	PfxPassword string
 	Args        []string
 }
 
@@ -61,6 +62,8 @@ func ParseFlags() (Flags, error) {
 		"whether to print pem as well")
 	flagSet.BoolVar(&flags.PemOnly, "pem-only", getBoolEnv("CERTINFO_PEM_ONLY", false),
 		"whether to print only pem (useful for downloading certs from host)")
+	flagSet.StringVar(&flags.PfxPassword, "pfx-password", getStringEnv("CERTINFO_PFX_PASSWORD", ""),
+		"password for PKCS#12/PFX bundles (defaults to empty)")
 	if isClipboardSupported() {
 		flagSet.BoolVar(&flags.Clipboard, "clipboard", false,
 			"read input from clipboard")

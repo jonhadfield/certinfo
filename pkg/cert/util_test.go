@@ -13,7 +13,7 @@ func loadTestCertificates(t *testing.T, files ...string) Certificates {
 	for _, f := range files {
 		bundle = append(bundle, loadTestFile(t, f))
 	}
-	certificates, err := FromBytes(bytes.Join(bundle, []byte("\n")))
+	certificates, err := FromBytes(bytes.Join(bundle, []byte("\n")), "")
 	require.NoError(t, err)
 	return certificates
 }

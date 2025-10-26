@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/pete911/certinfo/pkg/cert"
 	"github.com/pete911/certinfo/pkg/print"
@@ -9,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
+	"golang.org/x/term"
 )
 
 var Version = "dev"
@@ -66,16 +69,18 @@ func LoadCertificatesLocations(flags Flags) cert.CertificateLocations {
 
 	var certificateLocations cert.CertificateLocations
 	if flags.Clipboard {
-		certificateLocations = append(certificateLocations, cert.LoadCertificateFromClipboard())
+		certificateLocations = append(certificateLocations, cert.LoadCertificateFromClipboard(flags.PfxPassword))
 	}
 
 	if len(flags.Args) > 0 {
-		certificateLocations = append(certificateLocations, loadFromArgs(flags.Args, flags.ServerName, flags.Insecure)...)
+		certificateLocations = append(certificateLocations, loadFromArgs(flags.Args, flags.ServerName, flags.Insecure, flags.PfxPassword)...)
 	}
 
 	if isStdin() {
-		certificateLocations = append(certificateLocations, cert.LoadCertificateFromStdin())
+		certificateLocations = append(certificateLocations, cert.LoadCertificateFromStdin(flags.PfxPassword))
 	}
+
+	certificateLocations = maybePromptForPFXPasswords(certificateLocations, &flags)
 
 	if len(certificateLocations) > 0 {
 		return certificateLocations
@@ -87,7 +92,7 @@ func LoadCertificatesLocations(flags Flags) cert.CertificateLocations {
 	return nil
 }
 
-func loadFromArgs(args []string, serverName string, insecure bool) cert.CertificateLocations {
+func loadFromArgs(args []string, serverName string, insecure bool, password string) cert.CertificateLocations {
 
 	out := make(chan cert.CertificateLocation)
 	go func() {
@@ -100,7 +105,7 @@ func loadFromArgs(args []string, serverName string, insecure bool) cert.Certific
 					out <- cert.LoadCertificatesFromNetwork(arg, serverName, insecure)
 					return
 				}
-				out <- cert.LoadCertificatesFromFile(arg)
+				out <- cert.LoadCertificatesFromFile(arg, password)
 			}()
 		}
 		wg.Wait()
@@ -119,6 +124,116 @@ func loadFromArgs(args []string, serverName string, insecure bool) cert.Certific
 		certsSortedByArgs = append(certsSortedByArgs, certsByArgs[arg])
 	}
 	return certsSortedByArgs
+}
+
+func maybePromptForPFXPasswords(locations cert.CertificateLocations, flags *Flags) cert.CertificateLocations {
+	for i := range locations {
+		var pwErr *cert.PasswordRequiredError
+		if !errors.As(locations[i].Error, &pwErr) {
+			continue
+		}
+		if pwErr == nil || pwErr.Data() == nil {
+			continue
+		}
+
+		// Reattempt automatically if a new password has been supplied since initial load
+		if flags.PfxPassword != "" {
+			updated := reloadWithPassword(locations[i], pwErr, flags.PfxPassword)
+			if updated.Error == nil {
+				locations[i] = updated
+				continue
+			}
+			var newPwErr *cert.PasswordRequiredError
+			if errors.As(updated.Error, &newPwErr) {
+				pwErr = newPwErr
+			} else {
+				locations[i] = updated
+				continue
+			}
+		}
+
+		if !canPromptForPassword() {
+			continue
+		}
+
+		fmt.Fprintf(os.Stderr, "%s requires a password.\n", promptLabel(locations[i].Path))
+		for attempt := 0; attempt < 3; attempt++ {
+			password, ok := promptForPasswordInput(locations[i].Path, attempt)
+			if !ok {
+				break
+			}
+			if password == "" {
+				fmt.Fprintln(os.Stderr, "No password entered; leaving certificate unresolved.")
+				break
+			}
+			updated := reloadWithPassword(locations[i], pwErr, password)
+			if updated.Error == nil {
+				locations[i] = updated
+				flags.PfxPassword = password
+				break
+			}
+			var newPwErr *cert.PasswordRequiredError
+			if errors.As(updated.Error, &newPwErr) {
+				pwErr = newPwErr
+				fmt.Fprintln(os.Stderr, "Password incorrect; try again.")
+				continue
+			}
+			locations[i] = updated
+			break
+		}
+	}
+	return locations
+}
+
+func reloadWithPassword(location cert.CertificateLocation, pwErr *cert.PasswordRequiredError, password string) cert.CertificateLocation {
+	certificates, err := cert.FromBytes(pwErr.Data(), password)
+	if err != nil {
+		var newPwErr *cert.PasswordRequiredError
+		if errors.As(err, &newPwErr) {
+			newPwErr.SetSource(pwErr.Source())
+		}
+		return cert.CertificateLocation{
+			Path:       location.Path,
+			TLSVersion: location.TLSVersion,
+			Error:      err,
+		}
+	}
+	return cert.CertificateLocation{
+		Path:         location.Path,
+		TLSVersion:   location.TLSVersion,
+		Certificates: certificates,
+	}
+}
+
+func promptLabel(path string) string {
+	switch path {
+	case "stdin":
+		return "stdin"
+	case "clipboard":
+		return "clipboard"
+	default:
+		return path
+	}
+}
+
+func canPromptForPassword() bool {
+	return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stderr.Fd()))
+}
+
+func promptForPasswordInput(path string, attempt int) (string, bool) {
+	prompt := fmt.Sprintf("Enter password for %s", promptLabel(path))
+	if attempt > 0 {
+		prompt += " (try again)"
+	}
+	prompt += ": "
+	fmt.Fprint(os.Stderr, prompt)
+	passwordBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
+	fmt.Fprintln(os.Stderr)
+	if err != nil {
+		slog.Error("reading password", slog.String("path", path), slog.Any("err", err))
+		return "", false
+	}
+	return strings.TrimSpace(string(passwordBytes)), true
 }
 
 func isTCPNetworkAddress(arg string) bool {

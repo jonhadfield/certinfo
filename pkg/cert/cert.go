@@ -13,9 +13,80 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	pkcs12 "software.sslmate.com/src/go-pkcs12"
 )
 
 const certificateBlockType = "CERTIFICATE"
+
+var (
+	errNoPEMBlock          = errors.New("cannot find any PEM block")
+	ErrPFXPasswordRequired = errors.New("pkcs12: password required")
+)
+
+type PasswordSource int
+
+const (
+	PasswordSourceUnknown PasswordSource = iota
+	PasswordSourceFile
+	PasswordSourceClipboard
+	PasswordSourceStdin
+)
+
+type PasswordRequiredError struct {
+	data     []byte
+	provided bool
+	source   PasswordSource
+}
+
+func newPasswordRequiredError(data []byte, provided bool) *PasswordRequiredError {
+	return &PasswordRequiredError{
+		data:     append([]byte(nil), data...),
+		provided: provided,
+	}
+}
+
+func (e *PasswordRequiredError) Error() string {
+	if e == nil {
+		return ErrPFXPasswordRequired.Error()
+	}
+	if e.provided {
+		return "pkcs12: password incorrect (retry or use --pfx-password)"
+	}
+	return "pkcs12: password required (supply via --pfx-password)"
+}
+
+func (e *PasswordRequiredError) Unwrap() error { return ErrPFXPasswordRequired }
+
+func (e *PasswordRequiredError) Data() []byte {
+	if e == nil {
+		return nil
+	}
+	return e.data
+}
+
+func (e *PasswordRequiredError) Provided() bool {
+	if e == nil {
+		return false
+	}
+	return e.provided
+}
+
+func (e *PasswordRequiredError) Source() PasswordSource {
+	if e == nil {
+		return PasswordSourceUnknown
+	}
+	return e.source
+}
+
+func (e *PasswordRequiredError) SetSource(source PasswordSource) {
+	if e == nil || source == PasswordSourceUnknown {
+		return
+	}
+	if e.source == PasswordSourceUnknown {
+		e.source = source
+	}
+}
 
 var (
 	// order is important!
@@ -112,30 +183,88 @@ func FromX509Certificates(cs []*x509.Certificate) Certificates {
 
 	var certificates Certificates
 	for i, c := range cs {
-		certificates = append(certificates, Certificate{position: i, x509Certificate: c})
+		certificates = append(certificates, Certificate{position: i + 1, x509Certificate: c})
 	}
 	return certificates
 }
 
 // FromBytes converts raw certificate bytes to certificate, if the supplied data is cert bundle (or chain)
 // all the certificates will be returned
-func FromBytes(data []byte) (Certificates, error) {
+func FromBytes(data []byte, password string) (Certificates, error) {
 
-	var block *pem.Block
-	var certificates Certificates
-	var i int
+	data = bytes.TrimSpace(data)
+	if len(data) == 0 {
+		return nil, errNoPEMBlock
+	}
+
+	certificates, err := fromPEMBytes(data)
+	if err == nil {
+		return certificates, nil
+	}
+	if !errors.Is(err, errNoPEMBlock) {
+		return nil, err
+	}
+	return fromPKCS12Bytes(data, password)
+}
+
+func fromPEMBytes(data []byte) (Certificates, error) {
+
+	var (
+		block        *pem.Block
+		certificates Certificates
+		idx          int
+	)
 	for {
-		i++
+		idx++
 		block, data = pem.Decode(data)
 		if block == nil {
-			return nil, errors.New("cannot find any PEM block")
+			if len(certificates) == 0 {
+				return nil, errNoPEMBlock
+			}
+			return certificates, nil
 		}
-		certificates = append(certificates, fromPemBlock(i, block))
+		certificates = append(certificates, fromPemBlock(idx, block))
 		if len(data) == 0 {
-			break
+			return certificates, nil
 		}
 	}
-	return certificates, nil
+}
+
+func fromPKCS12Bytes(data []byte, password string) (Certificates, error) {
+	retryData := append([]byte(nil), data...)
+	privateKey, certificate, caCerts, err := pkcs12.DecodeChain(data, password)
+	if err != nil {
+		if errors.Is(err, pkcs12.ErrIncorrectPassword) {
+			return nil, newPasswordRequiredError(retryData, password != "")
+		}
+		return decodePKCS12TrustStore(retryData, password, err)
+	}
+
+	var x509Certs []*x509.Certificate
+	if certificate != nil {
+		x509Certs = append(x509Certs, certificate)
+	}
+	x509Certs = append(x509Certs, caCerts...)
+	if len(x509Certs) == 0 {
+		return decodePKCS12TrustStore(retryData, password, errors.New("pkcs12: no certificates found"))
+	}
+
+	_ = privateKey // keep to document that private keys are intentionally ignored
+	return FromX509Certificates(x509Certs), nil
+}
+
+func decodePKCS12TrustStore(data []byte, password string, originalErr error) (Certificates, error) {
+	certs, err := pkcs12.DecodeTrustStore(data, password)
+	if err != nil {
+		if errors.Is(err, pkcs12.ErrIncorrectPassword) {
+			return nil, newPasswordRequiredError(data, password != "")
+		}
+		return nil, originalErr
+	}
+	if len(certs) == 0 {
+		return nil, errors.New("pkcs12: no certificates found")
+	}
+	return FromX509Certificates(certs), nil
 }
 
 func fromPemBlock(position int, block *pem.Block) Certificate {

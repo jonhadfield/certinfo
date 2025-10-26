@@ -1,11 +1,17 @@
 package cert
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"crypto/x509/pkix"
+	"math/big"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	pkcs12 "software.sslmate.com/src/go-pkcs12"
 )
 
 func TestFromBytes(t *testing.T) {
@@ -22,6 +28,40 @@ func TestFromBytes(t *testing.T) {
 		require.Equal(t, 2, len(certificates))
 		assert.Equal(t, "CN=DigiCert Global Root G2,OU=www.digicert.com,O=DigiCert Inc,C=US", certificates[0].SubjectString())
 		assert.Equal(t, "CN=GTS Root R1,O=Google Trust Services LLC,C=US", certificates[1].SubjectString())
+	})
+
+	t.Run("given PKCS12 certificate with password, then certificate is loaded", func(t *testing.T) {
+		pfx := newPKCS12Bundle(t, "password123")
+		certificates, err := FromBytes(pfx, "password123")
+		require.NoError(t, err)
+		require.Len(t, certificates, 1)
+		assert.Equal(t, "CN=certinfo pkcs12 test", certificates[0].SubjectString())
+	})
+
+	t.Run("given PKCS12 certificate without password, then certificate is loaded", func(t *testing.T) {
+		pfx := newPKCS12Bundle(t, "")
+		certificates, err := FromBytes(pfx, "")
+		require.NoError(t, err)
+		require.Len(t, certificates, 1)
+		assert.Equal(t, "CN=certinfo pkcs12 test", certificates[0].SubjectString())
+	})
+
+	t.Run("given PKCS12 certificate requiring password and none supplied, then error is returned", func(t *testing.T) {
+		pfx := newPKCS12Bundle(t, "topsecret")
+		_, err := FromBytes(pfx, "")
+		var pwErr *PasswordRequiredError
+		require.ErrorAs(t, err, &pwErr)
+		require.NotNil(t, pwErr)
+		assert.False(t, pwErr.Provided())
+	})
+
+	t.Run("given PKCS12 certificate with wrong password, then prompt error is returned", func(t *testing.T) {
+		pfx := newPKCS12Bundle(t, "topsecret")
+		_, err := FromBytes(pfx, "badpassword")
+		var pwErr *PasswordRequiredError
+		require.ErrorAs(t, err, &pwErr)
+		require.NotNil(t, pwErr)
+		assert.True(t, pwErr.Provided())
 	})
 }
 
@@ -80,4 +120,32 @@ func Test_intermediateIdentification(t *testing.T) {
 		require.NotEmpty(t, certificate[0].x509Certificate.AuthorityKeyId)
 		require.Equal(t, "intermediate", certificate[0].Type())
 	})
+}
+
+func newPKCS12Bundle(t *testing.T, password string) []byte {
+	privKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+
+	template := &x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{CommonName: "certinfo pkcs12 test"},
+		NotBefore:             time.Now().Add(-time.Hour),
+		NotAfter:              time.Now().Add(24 * time.Hour),
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		BasicConstraintsValid: true,
+	}
+
+	derBytes, err := x509.CreateCertificate(rand.Reader, template, template, &privKey.PublicKey, privKey)
+	require.NoError(t, err)
+
+	cert, err := x509.ParseCertificate(derBytes)
+	require.NoError(t, err)
+
+	enc := pkcs12.Modern2023
+	if password == "" {
+		enc = pkcs12.Passwordless
+	}
+	pfx, err := enc.Encode(privKey, cert, nil, password)
+	require.NoError(t, err)
+	return pfx
 }
