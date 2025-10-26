@@ -35,7 +35,7 @@ func TestFromBytes(t *testing.T) {
 		certificates, err := FromBytes(pfx, "password123")
 		require.NoError(t, err)
 		require.Len(t, certificates, 1)
-		assert.Equal(t, "CN=certinfo pkcs12 test", certificates[0].SubjectString())
+		assert.Equal(t, "CN=certreader pkcs12 test", certificates[0].SubjectString())
 	})
 
 	t.Run("given PKCS12 certificate without password, then certificate is loaded", func(t *testing.T) {
@@ -43,7 +43,7 @@ func TestFromBytes(t *testing.T) {
 		certificates, err := FromBytes(pfx, "")
 		require.NoError(t, err)
 		require.Len(t, certificates, 1)
-		assert.Equal(t, "CN=certinfo pkcs12 test", certificates[0].SubjectString())
+		assert.Equal(t, "CN=certreader pkcs12 test", certificates[0].SubjectString())
 	})
 
 	t.Run("given PKCS12 certificate requiring password and none supplied, then error is returned", func(t *testing.T) {
@@ -128,7 +128,7 @@ func newPKCS12Bundle(t *testing.T, password string) []byte {
 
 	template := &x509.Certificate{
 		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{CommonName: "certinfo pkcs12 test"},
+		Subject:               pkix.Name{CommonName: "certreader pkcs12 test"},
 		NotBefore:             time.Now().Add(-time.Hour),
 		NotAfter:              time.Now().Add(24 * time.Hour),
 		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,

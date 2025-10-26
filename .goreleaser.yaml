@@ -29,20 +29,20 @@ changelog:
       - '^test:'
 release:
   github:
-    owner: pete911
-    name: certinfo
+    owner: jonhadfield
+    name: certreader
 homebrew_casks:
   - repository:
-      owner: pete911
+      owner: jonhadfield
       name: homebrew-tap
       token: "{{ .Env.GITHUB_TOKEN }}"
-    name: certinfo
-    homepage: "https://github.com/pete911/certinfo"
+    name: certreader
+    homepage: "https://github.com/jonhadfield/certreader"
     description: "Print x509 certificate info."
     hooks:
        post:
          install: |
            if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
-             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/certinfo"]
+             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/certreader"]
            end
 

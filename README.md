@@ -1,23 +1,19 @@
-# print x509 certificate info
+# print TLS certificate info
 
-[![pipeline](https://github.com/pete911/certinfo/actions/workflows/pipeline.yml/badge.svg)](https://github.com/pete911/certinfo/actions/workflows/pipeline.yml)
+[![pipeline](https://github.com/jonhadfield/certreader/actions/workflows/pipeline.yml/badge.svg)](https://github.com/jonhadfield/certreader/actions/workflows/pipeline.yml)
 
-> [!WARNING]  
-> If you installed previous versions (before `v1.0.34`) via brew, you need to reinstall (brew remove certinfo && brew install certinfo) to get updates
-
-Similar to `openssl x509 -in <file> -text` command, but handles chains, multiple files and TCP addresses. TLS/SSL
-version prints as well when using TCP address argument.
+Output detailed information about TLS certificates from local files, network hosts or clipboard.
 
 ## usage
 
 ```shell script
-certinfo [flags] [<file>|<host:port> ...]
+certreader [flags] [<file>|<host:port> ...]
 ```
 
 **file** argument can be:
- - **local file path** `certinfo <filename>`
- - **TCP network address** `certinfo <host:port>` e.g. `certinfo google.com:443`
- - **stdin** `echo "<cert-content>" | certinfo`
+ - **local file path** `certreader <filename>`
+ - **TCP network address** `certreader <host:port>` e.g. `certreader google.com:443`
+ - **stdin** `echo "<cert-content>" | certreader`
 
 ```
 +-------------------------------------------------------------------------------------------------------------------+
@@ -39,16 +35,16 @@ certinfo [flags] [<file>|<host:port> ...]
 | -sort-expiry  | sort certificates by expiration date                                                              |
 | -subject-like | print certificates with issuer field containing supplied string                                   |
 | -more         | use a combination of the '-pem -signature -chains' flags                                          |
-| -version      | certinfo version                                                                                  |
+| -version      | certreader version                                                                                  |
 | -help         | help                                                                                              |
 +---------------+---------------------------------------------------------------------------------------------------+
 
-When a PKCS#12/PFX input requires a password and no `--pfx-password` value is supplied, `certinfo` prompts on the
+When a PKCS#12/PFX input requires a password and no `--pfx-password` value is supplied, `certreader` prompts on the
 terminal; set the flag or `CERTINFO_PFX_PASSWORD` for non-interactive usage.
 ```
 
 If you need to run against multiple hosts, it is faster to execute command with multiple arguments e.g.
-`certinfo -insecure -expiry google.com:443 amazon.com:443 ...` rather than executing command multiple times. Args are
+`certreader -insecure -expiry google.com:443 amazon.com:443 ...` rather than executing command multiple times. Args are
 executed concurrently and much faster.
 
 Flags can be set as env. variable as well (`CERTINFO_<FLAG>=true` e.g. `CERTINFO_INSECURE=true`) and can be then
@@ -56,14 +52,14 @@ overridden with a flag.
 
 ## download
 
- - [binary](https://github.com/pete911/certinfo/releases)
+ - [binary](https://github.com/jonhadfield/certreader/releases)
 
 ## build/install
 
 ### brew
 
-- add tap `brew tap pete911/tap`
-- install `brew install certinfo`
+- add tap `brew tap jonhadfield/tap`
+- install `brew install certreader`
 
 ### go
 
@@ -83,11 +79,11 @@ Releases are published when the new tag is created e.g.
 - `--pem-only` flag returns only pem blocks that can be parsed and are type of certificate
 - `--no-expired` flag removes expired certificates
 
-`certinfo --pem-only --no-expired <chain-file>.pem > <new-chain-file>.pem`
+`certreader --pem-only --no-expired <chain-file>.pem > <new-chain-file>.pem`
 
 ### info/verbose
 
-`certinfo vault.com:443`
+`certreader vault.com:443`
 ```
 --- [vault.com:443 TLS 1.2] ---
 Version: 3
@@ -152,7 +148,7 @@ CA: true
 
 ### info/expiry
 
-`certinfo -expiry google.com:443`
+`certreader -expiry google.com:443`
 ```
 --- [google.com:443 TLS 1.3] ---
 Subject: CN=*.google.com
@@ -167,15 +163,15 @@ Expiry: 4 years 10 months 17 days 4 hours 29 minutes
 
 ### show certificate with specific subject
 This example shows AWS RDS certificates for specific region (we can also see AWS started using 100 years expiration)
-- show only eu-west-2 certs `curl https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem | certinfo -issuer-like eu-west-2`
-- download only eu-west-2 certs `curl https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem | certinfo -issuer-like eu-west-2 -pem-only > rds-eu-west-2.pem`
+- show only eu-west-2 certs `curl https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem | certreader -issuer-like eu-west-2`
+- download only eu-west-2 certs `curl https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem | certreader -issuer-like eu-west-2 -pem-only > rds-eu-west-2.pem`
 
 ### verify SNI certificates
 Specific host can be set by `server-name` flag. This is useful if we need to verify that load balancer is correctly
-using certificates for different hosts: `certinfo -server-name <host> <load-balancer|proxy>` e.g.
-`certinfo -server-name tabletmag.com  cname.vercel-dns.com:443` (tabletmag certificate behind vercel).
+using certificates for different hosts: `certreader -server-name <host> <load-balancer|proxy>` e.g.
+`certreader -server-name tabletmag.com  cname.vercel-dns.com:443` (tabletmag certificate behind vercel).
 
 ### local root certs
 
-- linux `ls -d /etc/ssl/certs/* | grep '.pem' | xargs certinfo -expiry`
-- mac `cat /etc/ssl/cert.pem | certinfo -expiry`
+- linux `ls -d /etc/ssl/certs/* | grep '.pem' | xargs certreader -expiry`
+- mac `cat /etc/ssl/cert.pem | certreader -expiry`

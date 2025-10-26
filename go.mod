@@ -1,4 +1,4 @@
-module github.com/pete911/certinfo
+module github.com/jonhadfield/certreader
 
 go 1.25
 

@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/pete911/certinfo/pkg/cert"
-	"github.com/pete911/certinfo/pkg/print"
+	"github.com/jonhadfield/certreader/pkg/cert"
+	"github.com/jonhadfield/certreader/pkg/print"
 	"log/slog"
 	"os"
 	"strconv"

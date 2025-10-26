@@ -2,7 +2,7 @@ package print
 
 import (
 	"fmt"
-	"github.com/pete911/certinfo/pkg/cert"
+	"github.com/jonhadfield/certreader/pkg/cert"
 	"log/slog"
 	"strings"
 	"time"

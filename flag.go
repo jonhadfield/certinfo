@@ -71,11 +71,11 @@ func ParseFlags() (Flags, error) {
 	flagSet.BoolVar(&flags.Verbose, "verbose", getBoolEnv("CERTINFO_VERBOSE", false),
 		"verbose logging")
 	flagSet.BoolVar(&flags.Version, "version", getBoolEnv("CERTINFO_VERSION", false),
-		"certinfo version")
+		"certreader version")
 	flagSet.BoolVar(&flags.More, "more", getBoolEnv("CERTINFO_MORE", false), "combination of '-pem -signature -chains'")
 
 	flagSet.Usage = func() {
-		fmt.Fprint(flagSet.Output(), "Usage: certinfo [flags] [<file>|<host:port> ...]\n")
+		fmt.Fprint(flagSet.Output(), "Usage: certreader [flags] [<file>|<host:port> ...]\n")
 		flagSet.PrintDefaults()
 	}
 	flags.Usage = flagSet.Usage
