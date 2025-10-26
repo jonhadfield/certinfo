@@ -42,14 +42,14 @@ certreader [flags] [<file>|<host:port> ...]
 +---------------+---------------------------------------------------------------------------------------------------+
 
 When a PKCS#12/PFX input requires a password and no `--pfx-password` value is supplied, `certreader` prompts on the
-terminal; set the flag or `CERTINFO_PFX_PASSWORD` for non-interactive usage.
+terminal; set the flag or `CERTREADER_PFX_PASSWORD` for non-interactive usage.
 ```
 
 If you need to run against multiple hosts, it is faster to execute command with multiple arguments e.g.
 `certreader -insecure -expiry google.com:443 amazon.com:443 ...` rather than executing command multiple times. Args are
 executed concurrently and much faster.
 
-Flags can be set as env. variable as well (`CERTINFO_<FLAG>=true` e.g. `CERTINFO_INSECURE=true`) and can be then
+Flags can be set as env. variable as well (`CERTREADER_<FLAG>=true` e.g. `CERTREADER_INSECURE=true`) and can be then
 overridden with a flag.
 
 ## download

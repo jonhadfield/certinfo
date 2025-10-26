@@ -53,12 +53,12 @@ func TestParseFlags(t *testing.T) {
 	t.Run("given args are not set and env vars are set then flags are set to provided env vars", func(t *testing.T) {
 
 		setInput(t, []string{"flag"}, map[string]string{
-			"CERTINFO_EXPIRY":   "true",
-			"CERTINFO_INSECURE": "true",
-			"CERTINFO_CHAINS":   "true",
-			"CERTINFO_PEM":      "true",
-			"CERTINFO_PEM_ONLY": "true",
-			"CERTINFO_VERSION":  "true",
+			"CERTREADER_EXPIRY":   "true",
+			"CERTREADER_INSECURE": "true",
+			"CERTREADER_CHAINS":   "true",
+			"CERTREADER_PEM":      "true",
+			"CERTREADER_PEM_ONLY": "true",
+			"CERTREADER_VERSION":  "true",
 		})
 
 		flags, err := ParseFlags()
@@ -81,11 +81,11 @@ func TestParseFlags(t *testing.T) {
 			"-pem=false",
 			"-version=false",
 		}, map[string]string{
-			"CERTINFO_EXPIRY":   "true",
-			"CERTINFO_CHAINS":   "true",
-			"CERTINFO_PEM":      "true",
-			"CERTINFO_PEM_ONLY": "true",
-			"CERTINFO_VERSION":  "true",
+			"CERTREADER_EXPIRY":   "true",
+			"CERTREADER_CHAINS":   "true",
+			"CERTREADER_PEM":      "true",
+			"CERTREADER_PEM_ONLY": "true",
+			"CERTREADER_VERSION":  "true",
 		})
 
 		flags, err := ParseFlags()
