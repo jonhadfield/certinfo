@@ -1,13 +1,9 @@
 name: go
 
 on:
-  workflow_call:
-    inputs:
-      go-version:
-        description: "go version"
-        default: "1.24.0"
-        required: false
-        type: string
+  push:
+    branches:
+      - '*'
 
 jobs:
   test:
