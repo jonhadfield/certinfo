@@ -1,15 +1,18 @@
 version: 2
+
 builds:
-  # ---- macOS (native on Apple silicon) ----
+  # --- macOS (Apple silicon) native ---
   - id: darwin-arm64
     env:
       - CGO_ENABLED=1
+      - CC=clang
+      - CXX=clang++
     goos: [darwin]
     goarch: [arm64]
     ldflags:
       - -X main.Version={{.Version}}
 
-  # ---- Linux targets via Zig cross-compiler ----
+  # --- Linux amd64 via Zig cross-compiler ---
   - id: linux-amd64
     env:
       - CGO_ENABLED=1
@@ -20,6 +23,7 @@ builds:
     ldflags:
       - -X main.Version={{.Version}}
 
+  # --- Linux arm64 via Zig cross-compiler ---
   - id: linux-arm64
     env:
       - CGO_ENABLED=1
@@ -30,7 +34,7 @@ builds:
     ldflags:
       - -X main.Version={{.Version}}
 
-  # ---- Windows targets via Zig cross-compiler (GNU ABI) ----
+  # --- Windows amd64 via Zig cross-compiler (GNU) ---
   - id: windows-amd64
     env:
       - CGO_ENABLED=1
@@ -41,33 +45,25 @@ builds:
     ldflags:
       - -X main.Version={{.Version}}
 
-  # (Optional) Windows ARM64; comment out if you don't need it
-  - id: windows-arm64
-    env:
-      - CGO_ENABLED=1
-      - CC=zig cc -target aarch64-windows-gnu
-      - CXX=zig c++ -target aarch64-windows-gnu
-    goos: [windows]
-    goarch: [arm64]
-    ldflags:
-      - -X main.Version={{.Version}}
-
 archives:
-  - formats: ['tar.gz']
+  - formats: [tar.gz]
     format_overrides:
       - goos: windows
-        formats: ['zip']
+        formats: [zip]
 
 checksum:
-  name_template: 'checksums.txt'
+  name_template: checksums.txt
+
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
+
 changelog:
   sort: asc
   filters:
     exclude:
       - '^docs:'
       - '^test:'
+
 release:
   github:
     owner: jonhadfield
@@ -77,6 +73,7 @@ release:
   extra_files:
     - glob: ./dist/certreader_darwin*.zip
 
+# (GoReleaser note) brews is deprecated; migrate to homebrew_casks later.
 brews:
   - name: certreader
     homepage: https://github.com/jonhadfield/certreader
@@ -88,4 +85,3 @@ brews:
 
 announce:
   skip: true
-
