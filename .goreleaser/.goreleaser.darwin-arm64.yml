@@ -15,7 +15,7 @@ archives:
   - formats: [tar.gz]
 
 checksum:
-  name_template: checksums.txt
+  name_template: 'checksums_darwin_arm64.txt'
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"

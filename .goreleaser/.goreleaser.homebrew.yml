@@ -1,0 +1,17 @@
+version: 2
+
+homebrew_casks:
+  - name: certreader
+    ids: [darwin-arm64, darwin-amd64]
+    repository:
+      owner: jonhadfield
+      name: homebrew-certreader
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    homepage: https://github.com/jonhadfield/certreader
+    description: Output detailed information about TLS certificates...
+    # Optional: restrict macOS versions, add caveats, etc.
+    # By default, GoReleaser will point the cask to your darwin asset URL.
+    # Ensure the archive contains a top-level 'certreader' binary.
+    # GoReleaser will emit a 'binary' stanza in the cask so it lands in /usr/local/bin or /opt/homebrew/bin.

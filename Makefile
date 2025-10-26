@@ -21,13 +21,17 @@ GORELEASER ?= goreleaser
 GITHUB_TOKEN ?= $(shell echo $$GITHUB_TOKEN)
 GO_VERSION := 1.22-bookworm
 
-release: release-mac release-linux-amd64 release-linux-arm64
+release: release-mac-amd64 release-mac-arm64 release-linux-amd64 release-linux-arm64
 	@echo "✅ All artifacts uploaded to the same GitHub release."
 
 # macOS (darwin/arm64) + Windows if you still want it here — adjust as needed
-release-mac:
+release-mac-arm64:
 	@echo "🚀 Releasing darwin/arm64 on host..."
 	$(GORELEASER) release --clean --config .goreleaser/.goreleaser.darwin-arm64.yml
+
+release-mac-amd64:
+	@echo "🚀 Releasing darwin/amd64 on host..."
+	$(GORELEASER) release --clean --config .goreleaser/.goreleaser.darwin-amd64.yml
 
 ifndef GITHUB_TOKEN
 $(error GITHUB_TOKEN is not set. Run: export GITHUB_TOKEN=<your PAT with repo scope>)
@@ -56,3 +60,7 @@ release-linux-arm64:
 	    apt-get update && apt-get install -y --no-install-recommends libx11-dev pkg-config && \
 	    goreleaser release --clean --config .goreleaser/.goreleaser.linux-arm64.yml \
 	  '
+
+release-homebrew:
+	@echo "🚀 Releasing homebrew..."
+	goreleaser release --clean --config .goreleaser/.goreleaser.homebrew.yml

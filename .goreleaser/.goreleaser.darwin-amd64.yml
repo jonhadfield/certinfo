@@ -1,22 +1,21 @@
 version: 2
 
 builds:
-  - id: linux-amd64
+  - id: darwin-amd64
     env:
       - CGO_ENABLED=1
-    goos:
-      - linux
-    goarch:
-      - amd64
+      - CC=clang
+      - CXX=clang++
+    goos: [darwin]
+    goarch: [amd64]
     ldflags:
       - -X main.Version={{.Version}}
 
 archives:
-  - formats:
-      - tar.gz
+  - formats: [tar.gz]
 
 checksum:
-  name_template: 'checksums_linux_amd64.txt'
+  name_template: 'checksums_darwin_amd64.txt'
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
@@ -24,9 +23,7 @@ snapshot:
 changelog:
   sort: asc
   filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
+    exclude: ['^docs:', '^test:']
 
 release:
   github:
