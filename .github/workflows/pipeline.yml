@@ -1,10 +1,10 @@
-name: pipeline
-
-on: [push]
-
-jobs:
-  go:
-    uses: jonhadfield/certinfo/.github/workflows/go.yml@main
+# name: pipeline
+#
+# on: [push]
+#
+# jobs:
+#   go:
+#     uses: jonhadfield/certinfo/.github/workflows/go.yml@main
 #   go-release:
 #     needs:
 #       - go
