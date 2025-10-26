@@ -1,5 +1,7 @@
 # print TLS certificate info
 
+### This is a fork of the excellent [certinfo](https://github.com/pete911/certinfo) tool with some additional features including pkcs12 support, clipboard reading, and colourised output.
+
 [![pipeline](https://github.com/jonhadfield/certreader/actions/workflows/pipeline.yml/badge.svg)](https://github.com/jonhadfield/certreader/actions/workflows/pipeline.yml)
 
 Output detailed information about TLS certificates from local files, network hosts or clipboard.
