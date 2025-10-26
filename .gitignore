@@ -1,3 +1,5 @@
 /certreader
 
 dist/
+.env
+AGENTS.md
