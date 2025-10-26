@@ -60,8 +60,8 @@ overridden with a flag.
 
 ### brew
 
-- add tap `brew tap jonhadfield/tap`
-- install `brew install certreader`
+- brew tap jonhadfield/certreader
+- brew install certreader
 
 ### go
 
